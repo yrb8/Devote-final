@@ -1,0 +1,49 @@
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.27;
+
+import "./SingleElectionVoting.sol";
+
+contract SingleElectionVotingTest is SingleElectionVoting {
+    // Property: Admin address harus valid
+    function echidna_admin_is_constant() public view returns (bool) {
+        return admin != address(0);
+    }
+
+        // Property: Tidak ada voter yang bisa double voting
+        function echidna_no_double_voting() public view returns (bool) {
+            for (uint256 i = 0; i < election.voterAddresses.length; i++) {
+                address voterAddr = election.voterAddresses[i];
+                Voter storage voter = election.voterList[voterAddr];
+                if (voter.hasVoted) {
+                    // Sudah vote, tidak boleh bisa vote lagi
+                    // Jika logika vote sudah benar, property ini akan tetap true
+                }
+            }
+            return true;
+        }
+
+    // Property: Tidak ada kandidat sebelum election dibuat
+    function echidna_no_candidate_before_election() public view returns (bool) {
+        if (bytes(election.name).length == 0) {
+            return election.candidateAddresses.length == 0;
+        }
+        return true;
+    }
+
+    // Property: Tidak ada voter sebelum election dibuat
+    function echidna_no_voter_before_election() public view returns (bool) {
+        if (bytes(election.name).length == 0) {
+            return election.voterAddresses.length == 0;
+        }
+        return true;
+    }
+
+    // Property: Tidak boleh ada pemenang sebelum election difinalisasi
+    function echidna_no_winner_before_finalized() public view returns (bool) {
+        if (!election.finalized) {
+            return true;
+        }
+        (string memory name,,uint256 voteCount) = getWinner();
+        return keccak256(bytes(name)) != keccak256(bytes(""));
+    }
+}

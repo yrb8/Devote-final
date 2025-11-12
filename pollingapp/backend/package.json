@@ -11,7 +11,8 @@
   "description": "",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat": "^2.26.3"
+    "hardhat": "^2.26.3",
+    "solidity-coverage": "^0.8.16"
   },
   "dependencies": {
     "@chainlink/contracts": "^0.5.1",

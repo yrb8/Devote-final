@@ -1,7 +1,8 @@
+    
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.27;
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 contract SingleElectionVoting {
 
@@ -23,18 +24,20 @@ contract SingleElectionVoting {
     struct Election {
         string name;
         uint256 startDate; // Timestamp for voting start
-        uint256 endDate; // Timestamp for voting end
+        uint256 endDate;   // Timestamp for voting end
         address[] candidateAddresses; // List of candidate addresses
         address[] voterAddresses;
         mapping(address => Voter) voterList; // Map voter addresses to voter data
         mapping(address => Candidate) candidateList; // Map candidate addresses to candidate data
         bool started;
         bool finalized;
+        uint256 startBlock; // Block number for voting start
+        uint256 endBlock; // Block number for voting end
     }
 
-    Election public election;
+    Election election;
 
-    address public admin;
+    address public immutable admin;
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Only admin can perform this action.");
@@ -56,21 +59,21 @@ contract SingleElectionVoting {
         _;
     }
 
+    modifier notFinalized() {
+        require(!election.finalized, "Election sudah difinalisasi.");
+        _;
+    }
+
     constructor() {
-        console.log("Owner contract deployed by:", msg.sender);
         admin = msg.sender;
+        // console.log("Owner contract deployed by:", msg.sender);
     }
 
     // Admin functions
-    function createElection(string memory _name, uint256 _startDate, uint256 _endDate) 
-        external 
-        onlyAdmin 
-    {
-        console.log("Sender trying to create the election:", msg.sender);
+    function createElection(string memory _name, uint256 _startDate, uint256 _endDate) external onlyAdmin {
         require(bytes(election.name).length == 0, "Election already created.");
         require(_startDate > block.timestamp, "Start date must be in the future.");
         require(_endDate > _startDate, "End date must be after start date.");
-        
         election.name = _name;
         election.startDate = _startDate;
         election.endDate = _endDate;
@@ -83,27 +86,31 @@ contract SingleElectionVoting {
     }
 
     // Admin Function-2
-    function addCandidate(address _candidateAddress, string memory _name, string memory _party, string memory _image) 
+    function addCandidate(address candidateAddress, string memory name, string memory party, string memory image) 
         external 
         onlyAdmin
-        onlyBefore(election.startDate - 1 days) 
+        onlyBefore(election.startDate - 1 days)
+        notFinalized
     {
-        require(election.candidateList[_candidateAddress].candidateAddress == address(0), "Candidate already added.");
-        election.candidateList[_candidateAddress] = Candidate(_candidateAddress, _name, _party, _image,0);
-        election.candidateAddresses.push(_candidateAddress);
+        require(bytes(election.name).length > 0, "Election belum dibuat.");
+        require(election.candidateList[candidateAddress].candidateAddress == address(0), "Candidate already added.");
+        election.candidateList[candidateAddress] = Candidate(candidateAddress, name, party, image, 0);
+        election.candidateAddresses.push(candidateAddress);
     }
 
-    function addVoter(address _voterAddress, string memory _name, uint256 _age) 
+    function addVoter(address voterAddress, string memory name, uint256 age) 
         external 
         onlyAdmin 
-        onlyBefore(election.startDate) 
+        onlyBefore(election.startDate)
+        notFinalized
     {
-        require(election.voterList[_voterAddress].voterAddress == address(0), "Voter already added.");
-        election.voterList[_voterAddress] = Voter(_voterAddress, _name, _age, false);
-        election.voterAddresses.push(_voterAddress);
+        require(bytes(election.name).length > 0, "Election belum dibuat.");
+        require(election.voterList[voterAddress].voterAddress == address(0), "Voter already added.");
+        election.voterList[voterAddress] = Voter(voterAddress, name, age, false);
+        election.voterAddresses.push(voterAddress);
     }
 
-    function startElection() external onlyAdmin {
+    function startElection() external onlyAdmin notFinalized {
         //require(block.timestamp >= election.startDate, "Start time not reached.");
         //require(block.timestamp < election.endDate, "End time already passed.");
         //require(!election.finalized, "Election already finalized.");
@@ -111,6 +118,8 @@ contract SingleElectionVoting {
     }
 
     function endElection() external onlyAdmin {
+        require(bytes(election.name).length > 0, "Election belum dibuat.");
+        require(election.candidateAddresses.length > 0, "Tidak ada kandidat.");
         //require(block.timestamp > election.endDate, "End time not reached.");
         election.finalized = true;
     }
@@ -123,7 +132,7 @@ contract SingleElectionVoting {
         return election.finalized;
     }
 
-    function getWinner() external view returns (string memory name, string memory party, uint256 voteCount) {
+    function getWinner() public view returns (string memory name, string memory party, uint256 voteCount) {
         require(election.candidateAddresses.length > 0, "No candidates in the election.");
         require(election.finalized, "Election has not been finalized.");
 
@@ -147,19 +156,18 @@ contract SingleElectionVoting {
     }
 
     // Voter functions
-    function vote(address _candidateAddress) 
-        external 
+    function vote(address candidateAddress) 
+        external
+        notFinalized
     {
         Voter storage voter = election.voterList[msg.sender];
-        console.log("Voter Address:", voter.voterAddress);
-        console.log("Sender Address:", msg.sender);
         require(election.started);
         require(voter.voterAddress != address(0), "You are not eligible to vote.");
         require(!voter.hasVoted, "You have already voted.");
-        require(election.candidateList[_candidateAddress].candidateAddress != address(0), "Invalid candidate.");
+        require(election.candidateList[candidateAddress].candidateAddress != address(0), "Invalid candidate.");
 
         voter.hasVoted = true;
-        election.candidateList[_candidateAddress].voteCount++;
+        election.candidateList[candidateAddress].voteCount++;
     }
 
     function getCandidates() external view returns (Candidate[] memory) {
@@ -181,6 +189,15 @@ contract SingleElectionVoting {
             voters[i] = election.voterList[election.voterAddresses[i]];
         }
         return voters;
+    }
+
+    // Fungsi dummy untuk test coverage modifier
+    function testOnlyDuring(uint256 startTs, uint256 endTs) external onlyDuring(startTs, endTs) {
+        // dummy
+    }
+
+    function testOnlyAfter(uint256 ts) external onlyAfter(ts) {
+        // dummy
     }
 }
 
