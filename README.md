@@ -27,6 +27,55 @@ The system integrates a modern web interface with decentralized technologies, en
 
 ---
 
-## 🏗️ System Architecture
-The system follows a **full-stack decentralized application (DApp)** architecture:
+## 🛠️ Technology Stack
+
+### Frontend
+- React.js
+- Ethers.js
+- MetaMask
+
+### Backend / Blockchain
+- Solidity
+- Ethereum
+- Hardhat
+- Node.js
+
+### Development Tools
+- Hardhat Testing Framework
+- npm
+
+---
+
+## ⚙️ Installation & Setup
+
+### Prerequisites
+- Node.js (v16+ recommended)
+- MetaMask browser extension
+- Hardhat
+
+### Steps
+```bash
+# Clone repository
+git clone https://github.com/yrb8/Devote-final.git
+
+# Navigate to backend
+cd pollingapp/backend
+
+# Install dependencies
+npm install
+
+# Compile smart contracts
+npx hardhat compile
+
+# Run local blockchain
+npx hardhat node
+
+# Deploy smart contract
+npx hardhat run scripts/deploy.js --network localhost
+
+#Testing
+npx hardhat test
+```
+Bryan Liem, Vincent Nicholas Hie, Zulfany Erlisa Rasjid. "Smart Contract Implementation in Web-Based E-Voting Systems: Blockchain Security and Transparency Analysis"
+ICoABCD, 2025.
 
